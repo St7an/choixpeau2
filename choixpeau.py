@@ -26,6 +26,46 @@ POINTS = {
     "invite": 15,
     "nitro": 50
 }
+@bot.event
+async def on_reaction_add(reaction, user):
+    if user.bot:
+        return
+
+    guild = reaction.message.guild
+    member = guild.get_member(user.id)
+    if member and any(role.name in HOUSE_ROLES for role in member.roles):
+        user_id = str(user.id)
+        house = get_house_from_roles(member.roles)
+
+        add_points(house, POINTS["reaction"], user_id)
+
+@bot.event
+async def on_message(message):
+    if message.author.bot:
+        return
+
+    # Récupérer le rôle du membre
+    user = message.author
+    if any(role.name in HOUSE_ROLES for role in user.roles):
+        user_id = str(user.id)
+        house = get_house_from_roles(user.roles)
+
+        add_points(house, POINTS["message"], user_id)
+
+    await bot.process_commands(message)
+
+@bot.event
+async def on_voice_state_update(member, before, after):
+    if member.bot:
+        return
+
+    if before.channel is None and after.channel is not None:
+        # L'utilisateur a rejoint un salon vocal
+        if any(role.name in HOUSE_ROLES for role in member.roles):
+            user_id = str(member.id)
+            house = get_house_from_roles(member.roles)
+            add_points(house, POINTS["vocal"], user_id)
+
 
 # Charger les points depuis JSON
 def load_points_from_json():
